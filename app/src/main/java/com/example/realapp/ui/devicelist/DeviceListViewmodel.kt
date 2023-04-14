@@ -7,7 +7,9 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
@@ -26,9 +28,13 @@ class DeviceListViewmodel(
     val composeBluetoothDevices = mutableStateListOf<BluetoothDevice>()
     val bluetoothScanning = mutableStateOf(false)
 
-    //Create get a Bluetooth adapter to get scanning data
+    val gattServices = mutableStateListOf<BluetoothGattService>()
 
-//    val connectionState = mutableStateOf()
+
+    var selectedDevice:BluetoothDevice? = null
+    var connectedGatt:BluetoothGatt? = null
+
+    val connectionState = mutableStateOf("Disconnected")
     //Create a bluetoothLE scanner
     private val bluetoothLeScanner:BluetoothLeScanner by lazy {
         bluetoothAdapter.bluetoothLeScanner
@@ -58,11 +64,31 @@ class DeviceListViewmodel(
     }
 
 
-//    private val bluetoothGattCallback = object : BluetoothGattCallback(){
-//        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-//            if
-//        }
-//    }
+    private val bluetoothGattCallback = object : BluetoothGattCallback(){
+        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                if(newState == BluetoothProfile.STATE_CONNECTED){
+                    connectionState.value = "Connected"
+                    connectedGatt = gatt
+                    gatt?.discoverServices()
+                    connectionState.value = "Discovering_services"
+                }
+                else if(newState == BluetoothProfile.STATE_DISCONNECTED){
+                    connectionState.value = "Disconnected"
+                    connectedGatt = null
+                }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS){
+                if(gatt != null){
+                    connectionState.value = "Connected"
+                    Log.d("services", "Added ${gatt.services}")
+                    gattServices.addAll(gatt.services)
+                }
+            }
+        }
+    }
+
 
 
 
@@ -79,10 +105,13 @@ class DeviceListViewmodel(
         }
     }
 
-    fun connectDevice(device:BluetoothDevice){
-//        device.connectGatt(this,false,)
+    fun connectDevice(device:BluetoothDevice?,context: Context){
+        device?.connectGatt(context,false,bluetoothGattCallback)
     }
 
+    fun disconnect(){
+        connectedGatt?.disconnect()
+    }
 
 
 

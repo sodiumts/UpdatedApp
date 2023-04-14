@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.realapp.Screen
 import com.example.realapp.ui.devicelist.DeviceListViewmodel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
@@ -18,7 +20,8 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 @SuppressLint("MissingPermission")
 @Composable
 fun BluetoothDeviceList(
-    viewModel: DeviceListViewmodel
+    viewModel: DeviceListViewmodel,
+    navController: NavController
 ){
     Surface(modifier = Modifier.fillMaxSize()) {
 //                        BluetoothDeviceList()
@@ -62,7 +65,7 @@ fun BluetoothDeviceList(
                         .fillMaxHeight()
                 ) {
                     items(composeBluetoothDevices) { device ->
-                        DeviceCard(device = device, viewModel = viewModel)
+                        DeviceCard(device = device, viewModel = viewModel, navController = navController)
                     }
                 }
             }
@@ -77,8 +80,9 @@ fun BluetoothDeviceList(
 @Composable
 fun DeviceCard(
     modifier: Modifier = Modifier,
-    device: BluetoothDevice,
-    viewModel: DeviceListViewmodel
+    device: BluetoothDevice?,
+    viewModel: DeviceListViewmodel,
+    navController: NavController
 ){
     Card(
         modifier = modifier
@@ -86,12 +90,17 @@ fun DeviceCard(
             .padding(10.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
         shape = MaterialTheme.shapes.medium,
-        onClick = { viewModel.connectDevice(device) }
+        onClick = {
+            if(device != null){
+                viewModel.selectedDevice = device
+                navController.navigate(Screen.DetailsScreen.route)
+            }
+        }
     ) {
-        if (device.name == null){
+        if (device?.name == null){
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(text = "Unknown device", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.titleLarge)
-                Text(text = "Address: ${device.address}", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.titleMedium)
+                Text(text = "Address: ${device?.address}", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.titleMedium)
             }
 
         }else{
