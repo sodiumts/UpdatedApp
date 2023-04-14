@@ -15,6 +15,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.example.compose.AppTheme
 import com.example.realapp.ui.Navigation
 import com.example.realapp.ui.devicelist.DeviceListViewmodel
 
@@ -43,9 +44,8 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         setContent {
-                MaterialTheme{
-//                    BluetoothDeviceList(viewModel = viewModel)
-                    Navigation(viewModel = viewModel)
+            AppTheme {
+                Navigation(viewModel = viewModel)
                 }
             }
         }
