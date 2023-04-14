@@ -15,13 +15,13 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.example.compose.AppTheme
 import com.example.realapp.ui.Navigation
 import com.example.realapp.ui.devicelist.DeviceListViewmodel
+import com.example.realapp.ui.theme.AppTheme
 
 @SuppressLint("MissingPermission")
 class MainActivity : ComponentActivity() {
-    val requestPermissionsLauncher =
+    private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){
         }
 

@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.SavedStateHandle
 import androidx.savedstate.SavedStateRegistryOwner
+import java.util.*
 
 @SuppressLint("MissingPermission")
 class DeviceListViewmodel(
@@ -34,6 +35,7 @@ class DeviceListViewmodel(
     var selectedDevice:BluetoothDevice? = null
     var connectedGatt:BluetoothGatt? = null
 
+    val disconnect = mutableStateOf(false)
     val connectionState = mutableStateOf("Disconnected")
     //Create a bluetoothLE scanner
     private val bluetoothLeScanner:BluetoothLeScanner by lazy {
@@ -67,13 +69,13 @@ class DeviceListViewmodel(
     private val bluetoothGattCallback = object : BluetoothGattCallback(){
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                 if(newState == BluetoothProfile.STATE_CONNECTED){
-                    connectionState.value = "Connected"
                     connectedGatt = gatt
                     gatt?.discoverServices()
                     connectionState.value = "Discovering_services"
                 }
                 else if(newState == BluetoothProfile.STATE_DISCONNECTED){
                     connectionState.value = "Disconnected"
+                    disconnect.value = true
                     connectedGatt = null
                 }
         }
@@ -92,7 +94,7 @@ class DeviceListViewmodel(
 
 
 
-    fun ScanBleDevices(){
+    fun scanBleDevices(){
         bluetoothScanning.value = true
         composeBluetoothDevices.clear()
         //launch a corutine that will perform the BLE scan for 5 seconds
@@ -113,6 +115,11 @@ class DeviceListViewmodel(
         connectedGatt?.disconnect()
     }
 
+    private val targetServiceUUID: UUID? = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
+    fun writeData(){
+//        val targetService = connectedGatt?.getService()
+        Log.d("Characteristic", "$targetServiceUUID")
+    }
 
 
 

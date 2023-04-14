@@ -31,24 +31,28 @@ fun BluetoothDeviceList(
         val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = bluetoothScanning.value)
 
         LaunchedEffect(Unit){
-            viewModel.ScanBleDevices()
+            viewModel.disconnect()
+            viewModel.scanBleDevices()
         }
 
 
 
 
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp)
+            ) {
                 Text(
                     "Devices",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.displayLarge,
-                    modifier = Modifier.padding(15.dp)
                 )
 
                 // Display the list of discovered devices in a lazy column
+
                 SwipeRefresh(
                     state = swipeRefreshState,
-                    onRefresh = { viewModel.ScanBleDevices() },
+                    onRefresh = { viewModel.scanBleDevices() },
                     indicator = { state, trigger ->
                         SwipeRefreshIndicator(
                             state = state,
