@@ -19,6 +19,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.SavedStateHandle
 import androidx.savedstate.SavedStateRegistryOwner
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 
 @SuppressLint("MissingPermission")
@@ -116,9 +118,42 @@ class DeviceListViewmodel(
     }
 
     private val targetServiceUUID: UUID? = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
+    private val targetCharacteristicUUID:UUID? = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8")
     fun writeData(){
-//        val targetService = connectedGatt?.getService()
-        Log.d("Characteristic", "$targetServiceUUID")
+        val targetService = connectedGatt?.getService(targetServiceUUID)
+        val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
+
+        fun Int.toByteArray() = byteArrayOf(
+            this.toByte(),
+            (this ushr 8).toByte(),
+            (this ushr 16).toByte(),
+            (this ushr 24).toByte()
+        )
+
+
+        val currentTime = (System.currentTimeMillis() /1000L).toInt().toByteArray()
+
+
+
+        fun toInt32(bytes: ByteArray, index: Int): Int {
+            require(bytes.size == 4) { "length must be 4, got: ${bytes.size}" }
+            return ByteBuffer.wrap(bytes, index, 4).order(ByteOrder.LITTLE_ENDIAN).int
+        }
+        val timeConverted = toInt32(currentTime,0)
+
+        Log.d("CurrentTime","$timeConverted")
+        val writable = currentTime
+
+        if(targetChar != null){
+            val status = connectedGatt?.writeCharacteristic(targetChar,writable,BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
+            Log.d("GattWriteStatus", "Status of write operation ${status}")
+        }
+//        if(targetChar?.permissions ==  BluetoothGattCharacteristic.PERMISSION_WRITE){
+
+//        }else{
+//            Log.d("CharPermission", "Characteristic doesn't have write permission")
+//        }
+
     }
 
 
