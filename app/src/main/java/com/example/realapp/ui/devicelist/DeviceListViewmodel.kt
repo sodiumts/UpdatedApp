@@ -148,12 +148,6 @@ class DeviceListViewmodel(
             val status = connectedGatt?.writeCharacteristic(targetChar,writable,BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
             Log.d("GattWriteStatus", "Status of write operation ${status}")
         }
-//        if(targetChar?.permissions ==  BluetoothGattCharacteristic.PERMISSION_WRITE){
-
-//        }else{
-//            Log.d("CharPermission", "Characteristic doesn't have write permission")
-//        }
-
     }
 
 
