@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
 
         requestPermissionsLauncher.launch(permissions)
 
-
         super.onCreate(savedInstanceState)
         setContent {
             AppTheme {
@@ -61,12 +60,6 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         showBluetoothPermRequest()
         }
-
-
-
-
-
-
 
 
     private var isBluetoothDialogueShown = false

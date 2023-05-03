@@ -1,16 +1,14 @@
 package com.example.realapp.ui.elements
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothGattService
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -25,7 +23,6 @@ fun BleDeviceDetails(
     navController: NavController,
     viewModel: DeviceListViewmodel
 ) {
-    val bluetoothServicesCompose = viewModel.gattServices
     val bluetoothGattStatusCompose = viewModel.connectionState
     val disconnectCall = viewModel.disconnect
 
@@ -45,14 +42,13 @@ fun BleDeviceDetails(
         }
         if (bluetoothGattStatusCompose.value == "Connected") {
             DeviceDetailsScreen(
-                innerPadding = innerPadding,
-                bluetoothServicesCompose = bluetoothServicesCompose,
-                viewModel = viewModel
+                viewModel = viewModel,
             )
         }
         if (disconnectCall.value) {
             disconnectCall.value = false
             viewModel.disconnect()
+            Toast.makeText(navController.context,"Device Disconnected", Toast.LENGTH_SHORT).show()
             navController.navigate(Screen.DeviceListScreen.route)
 
         }
@@ -84,16 +80,23 @@ fun DeviceConnectingScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("MissingPermission")
 @Composable
 fun DeviceDetailsScreen(
-    innerPadding: PaddingValues,
-    bluetoothServicesCompose: SnapshotStateList<BluetoothGattService>,
-    viewModel: DeviceListViewmodel
-
-){
+    viewModel: DeviceListViewmodel,
+) {
     var deviceName = viewModel.selectedDevice?.name
     val deviceAddress = viewModel.selectedDevice?.address
+
+    var text1 by remember { mutableStateOf(TextFieldValue("")) }
+    var text2 by remember { mutableStateOf(TextFieldValue("")) }
+    var text3 by remember { mutableStateOf(TextFieldValue("")) }
+
+    val checkState1 = remember { mutableStateOf(false) }
+    val checkState2 = remember { mutableStateOf(false) }
+    val checkState3 = remember { mutableStateOf(false) }
+
 
 
 
@@ -101,6 +104,7 @@ fun DeviceDetailsScreen(
     Column(
         modifier = Modifier
             .padding(10.dp),
+
     ) {
         Column {
             Text(
@@ -115,27 +119,89 @@ fun DeviceDetailsScreen(
 
                 )
         }
-        Button(onClick = { viewModel.writeData() }) {
-
-        }
-
-
-
-
-        LazyColumn(
+//        Button(onClick = { viewModel.writeData() })
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = 20.dp)
         ) {
-            items(bluetoothServicesCompose) { service ->
-                Text(text = service.uuid.toString())
-                Text(text = service.characteristics.toString())
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = checkState1.value,
+                        onCheckedChange = { checkState1.value = it }
+                    )
+                    OutlinedTextField(
+                        value = text1,
+                        singleLine = true,
+                        label = { Text(text= "1st task")},
+                        placeholder = {Text("Input a task")},
+                        onValueChange = { textValue ->
+                            if(textValue.text.length <= 10) text1 = textValue
+                        }
+                        )
+                }
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Checkbox(
+                        checked = checkState2.value,
+                        onCheckedChange = { checkState2.value = it }
+                    )
+                    OutlinedTextField(
+                        value = text2,
+                        singleLine = true,
+                        label = { Text(text= "2nd task")},
+                        onValueChange = { textValue ->
+                            if(textValue.text.length <= 10) text2 = textValue
+                        })
+                }
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                        ){
+                    Checkbox(
+                        checked = checkState3.value,
+                        onCheckedChange = { checkState3.value = it }
+                    )
+                    OutlinedTextField(
+                        value = text3,
+                        singleLine = true,
+                        label = { Text(text= "3rd task")},
+                        onValueChange = { textValue ->
+                            if(textValue.text.length <= 10) text3 = textValue
+                        })
+                }
             }
         }
+        Button(modifier = Modifier.align(Alignment.End),
+            onClick = {
+                val sendableData = mutableMapOf<String, Boolean>()
+
+                Log.d("Text", text1.text)
+                Log.d("Text", text2.text)
+                Log.d("Text", text3.text)
+
+                if (text1.text != "") {
+                    sendableData[text1.text] = checkState1.value
+                }
+                if (text2.text != "") {
+                    sendableData[text2.text] = checkState2.value
+                }
+                if (text3.text != "") {
+                    sendableData[text3.text] = checkState3.value
+                }
+                if (sendableData.isNotEmpty()) {
+                    Log.d("Button", sendableData.toString())
+                    viewModel.writeTodoList(sendableData)
+                }
+            }) {
+            Text(text = "Send Input")
+        }
     }
-
-
-
-
 }
+
