@@ -40,7 +40,7 @@ fun BleDeviceDetails(
             DeviceConnectingScreen(innerPadding = innerPadding)
 
         }
-        if (bluetoothGattStatusCompose.value == "Connected") {
+        if (bluetoothGattStatusCompose.value == "Connected" || viewModel.connectionState.value == "Writing") {
             DeviceDetailsScreen(
                 viewModel = viewModel,
             )
@@ -97,8 +97,11 @@ fun DeviceDetailsScreen(
     val checkState2 = remember { mutableStateOf(false) }
     val checkState3 = remember { mutableStateOf(false) }
 
+    var enabledBut by remember {
+        mutableStateOf(true)
+    }
 
-
+    enabledBut = viewModel.connectionState.value != "Writing"
 
     if (deviceName == null) deviceName = "Unknown Device"
     Column(
@@ -142,7 +145,7 @@ fun DeviceDetailsScreen(
                         label = { Text(text= "1st task")},
                         placeholder = {Text("Input a task")},
                         onValueChange = { textValue ->
-                            if(textValue.text.length <= 10) text1 = textValue
+                            if(textValue.text.length <= 15) text1 = textValue
                         }
                         )
                 }
@@ -158,7 +161,7 @@ fun DeviceDetailsScreen(
                         singleLine = true,
                         label = { Text(text= "2nd task")},
                         onValueChange = { textValue ->
-                            if(textValue.text.length <= 10) text2 = textValue
+                            if(textValue.text.length <= 20) text2 = textValue
                         })
                 }
                 Row (
@@ -173,34 +176,65 @@ fun DeviceDetailsScreen(
                         singleLine = true,
                         label = { Text(text= "3rd task")},
                         onValueChange = { textValue ->
-                            if(textValue.text.length <= 10) text3 = textValue
+                            if(textValue.text.length <= 20) text3 = textValue
                         })
                 }
             }
         }
-        Button(modifier = Modifier.align(Alignment.End),
-            onClick = {
-                val sendableData = mutableMapOf<String, Boolean>()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(
+                enabled = enabledBut,
+                onClick = {
+                enabledBut = false
+                    text1 = TextFieldValue("")
+                    text2 = TextFieldValue("")
+                    text3 = TextFieldValue("")
 
-                Log.d("Text", text1.text)
-                Log.d("Text", text2.text)
-                Log.d("Text", text3.text)
+                    checkState1.value = false
+                    checkState2.value = false
+                    checkState3.value = false
 
-                if (text1.text != "") {
-                    sendableData[text1.text] = checkState1.value
-                }
-                if (text2.text != "") {
-                    sendableData[text2.text] = checkState2.value
-                }
-                if (text3.text != "") {
-                    sendableData[text3.text] = checkState3.value
-                }
-                if (sendableData.isNotEmpty()) {
-                    Log.d("Button", sendableData.toString())
-                    viewModel.writeTodoList(sendableData)
-                }
+                viewModel.clearTodoList() 
             }) {
-            Text(text = "Send Input")
+                Text(text = "Clear List")
+            }
+            if (viewModel.connectionState.value == "Writing") {
+                CircularProgressIndicator()
+            }
+
+            Button(
+                enabled = enabledBut,
+                onClick = {
+                    enabledBut = false
+                    if (viewModel.connectionState.value != "Writing") {
+                        val sendableData = mutableMapOf<String, Boolean>()
+
+                        Log.d("Text", text1.text)
+                        Log.d("Text", text2.text)
+                        Log.d("Text", text3.text)
+
+                        if (text1.text != "") {
+                            sendableData[text1.text] = checkState1.value
+                        }
+                        if (text2.text != "") {
+                            sendableData[text2.text] = checkState2.value
+                        }
+                        if (text3.text != "") {
+                            sendableData[text3.text] = checkState3.value
+                        }
+                        if (sendableData.isNotEmpty()) {
+                            Log.d("Button", sendableData.toString())
+                            viewModel.writeTodoList(sendableData)
+                        }
+                    }
+                }) {
+                Text(text = "Send Input")
+            }
+
         }
     }
 }

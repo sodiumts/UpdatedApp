@@ -89,6 +89,14 @@ class DeviceListViewmodel(
                 }
             }
         }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            connectionState.value = "Connected"
+        }
     }
 
 
@@ -118,9 +126,26 @@ class DeviceListViewmodel(
     private val targetServiceUUID: UUID? = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
     private val targetCharacteristicUUID:UUID? = UUID.fromString("271a1d53-5650-456d-9423-9cfc97be8e28")
 
+    fun clearTodoList(){
+        val targetService = connectedGatt?.getService(targetServiceUUID)
+        val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
+        connectionState.value = "Writing"
+        if(targetChar != null){
+            val status = connectedGatt?.writeCharacteristic(
+                targetChar,
+                ByteArray(245),
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+            if(status != BluetoothStatusCodes.SUCCESS){
+                Log.e("Clear Error", status.toString())
+            }
+        }
+    }
+
+
     fun writeTodoList(writableData:Map<String,Boolean>){
         val targetService = connectedGatt?.getService(targetServiceUUID)
         val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
+        connectionState.value = "Writing"
         if(targetChar != null){
             Log.d("Sendable Data", writableData.toString())
             val keys = writableData.keys
