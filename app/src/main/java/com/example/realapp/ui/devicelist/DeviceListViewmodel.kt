@@ -131,82 +131,56 @@ class DeviceListViewmodel(
     private val targetCharacteristicUUID:UUID? = UUID.fromString("271a1d53-5650-456d-9423-9cfc97be8e28")
 
     fun clearTodoList(){
-        val targetService = connectedGatt?.getService(targetServiceUUID)
-        val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
-        connectionState.value = "Writing"
-        if(targetChar != null){
-            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU){
-                targetChar.value = ByteArray(245)
-                connectedGatt?.writeCharacteristic(targetChar)
-            }else {
-                val status = connectedGatt?.writeCharacteristic(
-                    targetChar,
-                    ByteArray(245),
-                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                )
-                if (status != BluetoothStatusCodes.SUCCESS) {
-                    Log.e("Clear Error", status.toString())
-                }
-            }
-        }
+        writeCharacteristic(ByteArray(245))
     }
 
 
     fun writeTodoList(writableData:Map<String,Boolean>){
+        val keys = writableData.keys
+        val values = writableData.values
+        var dataBytes:ByteArray = byteArrayOf()
+
+        dataBytes += keys.size.toByte()
+
+        for(value in values){
+            dataBytes += if(value){
+                1.toByte()
+            }else{
+                0.toByte()
+            }
+        }
+
+        for(key in keys){
+            dataBytes += key.toByteArray(Charsets.US_ASCII)
+            dataBytes += 254.toByte()
+        }
+
+
+        writeCharacteristic(dataBytes)
+    }
+
+
+    private fun writeCharacteristic(writableData:ByteArray){
         val targetService = connectedGatt?.getService(targetServiceUUID)
         val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
         connectionState.value = "Writing"
+
         if(targetChar != null){
-            Log.d("Sendable Data", writableData.toString())
-            val keys = writableData.keys
-            val values = writableData.values
-
-
-
-            var dataBytes:ByteArray = byteArrayOf()
-            dataBytes += keys.size.toByte()
-
-
-
-            for(value in values){
-                dataBytes += if(value){
-                    1.toByte()
-                }else{
-                    0.toByte()
-                }
-            }
-            //
-            for(key in keys){
-                Log.d("text", key)
-                dataBytes += key.toByteArray(Charsets.US_ASCII)
-                dataBytes += 254.toByte()
-            }
-
-            for(byte in dataBytes){
-                Log.d("d",byte.toString())
-            }
-            Log.d("len",dataBytes.size.toString())
-
             if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                targetChar.value = dataBytes
+                targetChar.value = writableData
                 connectedGatt?.writeCharacteristic(targetChar)
             }else {
                 val status = connectedGatt?.writeCharacteristic(
                     targetChar,
-                    dataBytes,
+                    writableData,
                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                 )
                 if (status != BluetoothStatusCodes.SUCCESS) {
-                    Log.e("BLE SEND ERROR", status.toString())
+                    Log.e("Write error", status.toString())
                 }
             }
-        }else{
-            Log.d("Write Status", "no characteristic")
-
         }
     }
-
-
 
 
 
