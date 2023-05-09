@@ -8,6 +8,7 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
@@ -57,8 +58,10 @@ class DeviceListViewmodel(
     //Define a callback for the BLE scanner
     private val scanCallback = object:ScanCallback(){
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
+//            Log.d("Device",result?.device?.name.toString())
             if (result != null){
                 if (result.device !in composeBluetoothDevices){
+//                    Log.d("Device", result.device.name)
                     composeBluetoothDevices.add(result.device)
                 }
             }
@@ -108,6 +111,7 @@ class DeviceListViewmodel(
         //launch a corutine that will perform the BLE scan for 5 seconds
         viewModelScope.launch {
             bluetoothLeScanner.startScan(scanFilters,scanSetting,scanCallback)
+//            bluetoothLeScanner.stopScan(scanCallback)
             delay(5000L)
             bluetoothLeScanner.stopScan(scanCallback)
 
@@ -131,12 +135,18 @@ class DeviceListViewmodel(
         val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
         connectionState.value = "Writing"
         if(targetChar != null){
-            val status = connectedGatt?.writeCharacteristic(
-                targetChar,
-                ByteArray(245),
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
-            if(status != BluetoothStatusCodes.SUCCESS){
-                Log.e("Clear Error", status.toString())
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU){
+                targetChar.value = ByteArray(245)
+                connectedGatt?.writeCharacteristic(targetChar)
+            }else {
+                val status = connectedGatt?.writeCharacteristic(
+                    targetChar,
+                    ByteArray(245),
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+                if (status != BluetoothStatusCodes.SUCCESS) {
+                    Log.e("Clear Error", status.toString())
+                }
             }
         }
     }
@@ -177,16 +187,19 @@ class DeviceListViewmodel(
             }
             Log.d("len",dataBytes.size.toString())
 
-
-            val status = connectedGatt?.writeCharacteristic(
-                targetChar,
-                dataBytes,
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
-
-            if(status != BluetoothStatusCodes.SUCCESS){
-                Log.e("BLE SEND ERROR", status.toString())
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                targetChar.value = dataBytes
+                connectedGatt?.writeCharacteristic(targetChar)
+            }else {
+                val status = connectedGatt?.writeCharacteristic(
+                    targetChar,
+                    dataBytes,
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+                if (status != BluetoothStatusCodes.SUCCESS) {
+                    Log.e("BLE SEND ERROR", status.toString())
+                }
             }
-
         }else{
             Log.d("Write Status", "no characteristic")
 

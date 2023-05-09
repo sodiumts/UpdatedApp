@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -28,11 +27,12 @@ fun BluetoothDeviceList(
         val composeBluetoothDevices = viewModel.composeBluetoothDevices
         val bluetoothScanning = viewModel.bluetoothScanning
 
+
         val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = bluetoothScanning.value)
 
         LaunchedEffect(Unit){
-            viewModel.disconnect()
             viewModel.scanBleDevices()
+            viewModel.disconnect()
         }
 
 

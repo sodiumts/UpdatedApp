@@ -93,9 +93,9 @@ fun DeviceDetailsScreen(
     var text2 by remember { mutableStateOf(TextFieldValue("")) }
     var text3 by remember { mutableStateOf(TextFieldValue("")) }
 
-    val checkState1 = remember { mutableStateOf(false) }
-    val checkState2 = remember { mutableStateOf(false) }
-    val checkState3 = remember { mutableStateOf(false) }
+    var checkState1 by remember { mutableStateOf(false) }
+    var checkState2 by remember { mutableStateOf(false) }
+    var checkState3 by remember { mutableStateOf(false) }
 
     var enabledBut by remember {
         mutableStateOf(true)
@@ -136,8 +136,8 @@ fun DeviceDetailsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        checked = checkState1.value,
-                        onCheckedChange = { checkState1.value = it }
+                        checked = checkState1,
+                        onCheckedChange = { checkState1 = it }
                     )
                     OutlinedTextField(
                         value = text1,
@@ -153,30 +153,30 @@ fun DeviceDetailsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     Checkbox(
-                        checked = checkState2.value,
-                        onCheckedChange = { checkState2.value = it }
+                        checked = checkState2,
+                        onCheckedChange = { checkState2 = it }
                     )
                     OutlinedTextField(
                         value = text2,
                         singleLine = true,
                         label = { Text(text= "2nd task")},
                         onValueChange = { textValue ->
-                            if(textValue.text.length <= 20) text2 = textValue
+                            if(textValue.text.length <= 15) text2 = textValue
                         })
                 }
                 Row (
                     verticalAlignment = Alignment.CenterVertically
                         ){
                     Checkbox(
-                        checked = checkState3.value,
-                        onCheckedChange = { checkState3.value = it }
+                        checked = checkState3,
+                        onCheckedChange = { checkState3 = it }
                     )
                     OutlinedTextField(
                         value = text3,
                         singleLine = true,
                         label = { Text(text= "3rd task")},
                         onValueChange = { textValue ->
-                            if(textValue.text.length <= 20) text3 = textValue
+                            if(textValue.text.length <= 15) text3 = textValue
                         })
                 }
             }
@@ -194,9 +194,9 @@ fun DeviceDetailsScreen(
                     text2 = TextFieldValue("")
                     text3 = TextFieldValue("")
 
-                    checkState1.value = false
-                    checkState2.value = false
-                    checkState3.value = false
+                    checkState1 = false
+                    checkState2 = false
+                    checkState3 = false
 
                 viewModel.clearTodoList() 
             }) {
@@ -218,13 +218,13 @@ fun DeviceDetailsScreen(
                         Log.d("Text", text3.text)
 
                         if (text1.text != "") {
-                            sendableData[text1.text] = checkState1.value
+                            sendableData[text1.text] = checkState1
                         }
                         if (text2.text != "") {
-                            sendableData[text2.text] = checkState2.value
+                            sendableData[text2.text] = checkState2
                         }
                         if (text3.text != "") {
-                            sendableData[text3.text] = checkState3.value
+                            sendableData[text3.text] = checkState3
                         }
                         if (sendableData.isNotEmpty()) {
                             Log.d("Button", sendableData.toString())
