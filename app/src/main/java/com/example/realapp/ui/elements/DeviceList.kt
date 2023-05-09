@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -28,27 +27,32 @@ fun BluetoothDeviceList(
         val composeBluetoothDevices = viewModel.composeBluetoothDevices
         val bluetoothScanning = viewModel.bluetoothScanning
 
+
         val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = bluetoothScanning.value)
 
         LaunchedEffect(Unit){
-            viewModel.ScanBleDevices()
+            viewModel.scanBleDevices()
+            viewModel.disconnect()
         }
 
 
 
 
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp)
+            ) {
                 Text(
                     "Devices",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.displayLarge,
-                    modifier = Modifier.padding(15.dp)
                 )
 
                 // Display the list of discovered devices in a lazy column
+
                 SwipeRefresh(
                     state = swipeRefreshState,
-                    onRefresh = { viewModel.ScanBleDevices() },
+                    onRefresh = { viewModel.scanBleDevices() },
                     indicator = { state, trigger ->
                         SwipeRefreshIndicator(
                             state = state,

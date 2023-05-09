@@ -8,6 +8,7 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
@@ -19,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.SavedStateHandle
 import androidx.savedstate.SavedStateRegistryOwner
+import java.util.*
 
 @SuppressLint("MissingPermission")
 class DeviceListViewmodel(
@@ -34,6 +36,7 @@ class DeviceListViewmodel(
     var selectedDevice:BluetoothDevice? = null
     var connectedGatt:BluetoothGatt? = null
 
+    val disconnect = mutableStateOf(false)
     val connectionState = mutableStateOf("Disconnected")
     //Create a bluetoothLE scanner
     private val bluetoothLeScanner:BluetoothLeScanner by lazy {
@@ -55,8 +58,10 @@ class DeviceListViewmodel(
     //Define a callback for the BLE scanner
     private val scanCallback = object:ScanCallback(){
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
+//            Log.d("Device",result?.device?.name.toString())
             if (result != null){
                 if (result.device !in composeBluetoothDevices){
+//                    Log.d("Device", result.device.name)
                     composeBluetoothDevices.add(result.device)
                 }
             }
@@ -67,13 +72,13 @@ class DeviceListViewmodel(
     private val bluetoothGattCallback = object : BluetoothGattCallback(){
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                 if(newState == BluetoothProfile.STATE_CONNECTED){
-                    connectionState.value = "Connected"
                     connectedGatt = gatt
                     gatt?.discoverServices()
                     connectionState.value = "Discovering_services"
                 }
                 else if(newState == BluetoothProfile.STATE_DISCONNECTED){
                     connectionState.value = "Disconnected"
+                    disconnect.value = true
                     connectedGatt = null
                 }
         }
@@ -87,17 +92,26 @@ class DeviceListViewmodel(
                 }
             }
         }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            connectionState.value = "Connected"
+        }
     }
 
 
 
 
-    fun ScanBleDevices(){
+    fun scanBleDevices(){
         bluetoothScanning.value = true
         composeBluetoothDevices.clear()
         //launch a corutine that will perform the BLE scan for 5 seconds
         viewModelScope.launch {
             bluetoothLeScanner.startScan(scanFilters,scanSetting,scanCallback)
+//            bluetoothLeScanner.stopScan(scanCallback)
             delay(5000L)
             bluetoothLeScanner.stopScan(scanCallback)
 
@@ -113,6 +127,84 @@ class DeviceListViewmodel(
         connectedGatt?.disconnect()
     }
 
+    private val targetServiceUUID: UUID? = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
+    private val targetCharacteristicUUID:UUID? = UUID.fromString("271a1d53-5650-456d-9423-9cfc97be8e28")
+
+    fun clearTodoList(){
+        val targetService = connectedGatt?.getService(targetServiceUUID)
+        val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
+        connectionState.value = "Writing"
+        if(targetChar != null){
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU){
+                targetChar.value = ByteArray(245)
+                connectedGatt?.writeCharacteristic(targetChar)
+            }else {
+                val status = connectedGatt?.writeCharacteristic(
+                    targetChar,
+                    ByteArray(245),
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+                if (status != BluetoothStatusCodes.SUCCESS) {
+                    Log.e("Clear Error", status.toString())
+                }
+            }
+        }
+    }
+
+
+    fun writeTodoList(writableData:Map<String,Boolean>){
+        val targetService = connectedGatt?.getService(targetServiceUUID)
+        val targetChar = targetService?.getCharacteristic(targetCharacteristicUUID)
+        connectionState.value = "Writing"
+        if(targetChar != null){
+            Log.d("Sendable Data", writableData.toString())
+            val keys = writableData.keys
+            val values = writableData.values
+
+
+
+            var dataBytes:ByteArray = byteArrayOf()
+            dataBytes += keys.size.toByte()
+
+
+
+            for(value in values){
+                dataBytes += if(value){
+                    1.toByte()
+                }else{
+                    0.toByte()
+                }
+            }
+            //
+            for(key in keys){
+                Log.d("text", key)
+                dataBytes += key.toByteArray(Charsets.US_ASCII)
+                dataBytes += 254.toByte()
+            }
+
+            for(byte in dataBytes){
+                Log.d("d",byte.toString())
+            }
+            Log.d("len",dataBytes.size.toString())
+
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                targetChar.value = dataBytes
+                connectedGatt?.writeCharacteristic(targetChar)
+            }else {
+                val status = connectedGatt?.writeCharacteristic(
+                    targetChar,
+                    dataBytes,
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+                if (status != BluetoothStatusCodes.SUCCESS) {
+                    Log.e("BLE SEND ERROR", status.toString())
+                }
+            }
+        }else{
+            Log.d("Write Status", "no characteristic")
+
+        }
+    }
 
 
 

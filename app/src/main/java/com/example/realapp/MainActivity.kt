@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,13 +16,13 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.example.compose.AppTheme
 import com.example.realapp.ui.Navigation
 import com.example.realapp.ui.devicelist.DeviceListViewmodel
+import com.example.realapp.ui.theme.AppTheme
 
 @SuppressLint("MissingPermission")
 class MainActivity : ComponentActivity() {
-    val requestPermissionsLauncher =
+    private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){
         }
 
@@ -35,11 +36,21 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val permissions = arrayOf(
-            Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (Build.VERSION.SDK_INT >= 31){
+            val permissions = arrayOf(Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+                requestPermissionsLauncher.launch(permissions)
+        }
+        else{
+            val permissions = arrayOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+            requestPermissionsLauncher.launch(permissions)
+        }
 
-        requestPermissionsLauncher.launch(permissions)
 
 
         super.onCreate(savedInstanceState)
@@ -61,12 +72,6 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         showBluetoothPermRequest()
         }
-
-
-
-
-
-
 
 
     private var isBluetoothDialogueShown = false
